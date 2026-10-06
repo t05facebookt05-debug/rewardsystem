@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>小組獎勵計劃</title>
+  <title>星星獎勵計劃 & 多班別後台管理系統</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -67,4 +67,833 @@
 
       <!-- 英雄榜 Banner -->
       <div id="hero-banner" class="rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl font-black">★
+        <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl font-black">★</div>
+        <div class="relative z-10 max-w-2xl">
+          <span id="current-class-tag" class="bg-black/20 text-yellow-200 text-xs font-bold px-3 py-1 rounded-full border border-white/20 uppercase tracking-wider">
+            全校展示
+          </span>
+          <h2 id="banner-welcome-text" class="text-2xl sm:text-4xl font-black mt-2 mb-2">加油！累積星星換領禮物 🎁</h2>
+          <p id="banner-desc-text" class="text-amber-100 text-sm sm:text-base">保持良好表現與積極學習態度，收集更多星星，解鎖豐富獎勵！</p>
+        </div>
+      </div>
+
+      <!-- 頁籤導向：排行榜 vs 禮物商店 -->
+      <div class="flex border-b border-slate-200">
+        <button id="tab-btn-leaderboard" onclick="switchStudentTab('leaderboard')" class="py-3 px-6 font-bold text-amber-600 border-b-2 border-amber-500 flex items-center transition">
+          <i class="fa-solid fa-trophy mr-2"></i>星星排行榜
+        </button>
+        <button id="tab-btn-shop" onclick="switchStudentTab('shop')" class="py-3 px-6 font-bold text-slate-500 hover:text-amber-600 border-b-2 border-transparent flex items-center transition">
+          <i class="fa-solid fa-store mr-2"></i>禮物商店
+        </button>
+      </div>
+
+      <!-- 區塊 1：星星排行榜 Leaderboard -->
+      <div id="student-tab-leaderboard" class="space-y-4">
+        <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div class="relative w-full sm:w-64">
+            <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
+            <input type="text" id="search-student-input" onkeyup="renderLeaderboard()" placeholder="搜尋姓名..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          </div>
+          <div class="text-xs text-slate-500 hidden sm:block">
+            最後更新時間：<span id="last-update-time">剛剛</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                  <th class="py-3.5 px-4 text-center w-16">排名</th>
+                  <th class="py-3.5 px-4">成員姓名</th>
+                  <th class="py-3.5 px-4 text-center">班別</th>
+                  <th class="py-3.5 px-4 text-center">累積獲得 <span class="unit-text">★</span></th>
+                  <th class="py-3.5 px-4 text-center">已換領/扣除 <span class="unit-text">★</span></th>
+                  <th class="py-3.5 px-4 text-center">目前餘下 <span class="unit-text">★</span></th>
+                  <th class="py-3.5 px-4">已兌換禮物備註</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-tbody" class="divide-y divide-slate-100 text-sm font-medium">
+                <!-- JS 動態生成 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊 2：禮物商店 Gift Shop -->
+      <div id="student-tab-shop" class="hidden space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="shop-gift-cards">
+          <!-- JS 動態生成禮物卡片 -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= 後台管理視角 ADMIN PANEL ================= -->
+    <div id="admin-panel" class="hidden space-y-6">
+
+      <!-- 後台控制台 Header -->
+      <div class="bg-slate-800 text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="bg-emerald-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">系統已驗證</span>
+            <span class="text-xs text-slate-400">登入超時保護已啟用 (5分鐘)</span>
+          </div>
+          <h2 class="text-2xl font-bold mt-1">後台管理系統 Dashboard</h2>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="exitAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center shadow-md">
+            <i class="fa-solid fa-right-from-bracket mr-2"></i>離開後台 (安全登出)
+          </button>
+        </div>
+      </div>
+
+      <!-- 後台功能選單導覽 -->
+      <div class="flex border-b border-slate-300 space-x-2 overflow-x-auto pb-1">
+        <button id="admin-tab-btn-overview" onclick="switchAdminTab('overview')" class="py-2.5 px-5 font-bold text-slate-800 border-b-2 border-slate-800 whitespace-nowrap">
+          <i class="fa-solid fa-chart-pie mr-2"></i>數據總覽
+        </button>
+        <button id="admin-tab-btn-students" onclick="switchAdminTab('students')" class="py-2.5 px-5 font-bold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap">
+          <i class="fa-solid fa-user-graduate mr-2"></i>成員與星星管理
+        </button>
+        <button id="admin-tab-btn-gifts" onclick="switchAdminTab('gifts')" class="py-2.5 px-5 font-bold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap">
+          <i class="fa-solid fa-gifts mr-2"></i>禮物上架管理
+        </button>
+        <button id="admin-tab-btn-redemptions" onclick="switchAdminTab('redemptions')" class="py-2.5 px-5 font-bold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap relative">
+          <i class="fa-solid fa-clipboard-check mr-2"></i>兌換審核
+          <span id="pending-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button id="admin-tab-btn-classes" onclick="switchAdminTab('classes')" class="py-2.5 px-5 font-bold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap">
+          <i class="fa-solid fa-school mr-2"></i>班別設定
+        </button>
+        <button id="admin-tab-btn-settings" onclick="switchAdminTab('settings')" class="py-2.5 px-5 font-bold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap">
+          <i class="fa-solid fa-sliders mr-2"></i>系統與文字設定
+        </button>
+      </div>
+
+      <!-- 後台分頁 1：數據總覽 Overview -->
+      <div id="admin-tab-overview" class="space-y-6">
+        <!-- 數據卡片 -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-bold text-slate-400 uppercase">總成員數</div>
+            <div id="stat-total-students" class="text-3xl font-black text-slate-800 mt-1">0</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-bold text-amber-500 uppercase">總發放 <span class="unit-text">★</span></div>
+            <div id="stat-total-earned" class="text-3xl font-black text-amber-500 mt-1">0</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-bold text-orange-500 uppercase">總已兌換 <span class="unit-text">★</span></div>
+            <div id="stat-total-used" class="text-3xl font-black text-orange-500 mt-1">0</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-xs font-bold text-emerald-500 uppercase">流通剩餘 <span class="unit-text">★</span></div>
+            <div id="stat-total-remaining" class="text-3xl font-black text-emerald-500 mt-1">0</div>
+          </div>
+        </div>
+
+        <!-- 圖表分析 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 class="font-bold text-slate-800 mb-4 flex items-center"><i class="fa-solid fa-chart-column text-amber-500 mr-2"></i>各班別星星發放與消耗對比</h3>
+            <div class="h-64"><canvas id="classComparisonChart"></canvas></div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 class="font-bold text-slate-800 mb-4 flex items-center"><i class="fa-solid fa-chart-pie text-indigo-500 mr-2"></i>熱門禮物兌換比例</h3>
+            <div class="h-64"><canvas id="giftPieChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後台分頁 2：成員與星星管理 Students -->
+      <div id="admin-tab-students" class="hidden space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200">
+          <div class="flex items-center space-x-2">
+            <button onclick="openAddStudentModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center">
+              <i class="fa-solid fa-user-plus mr-2"></i>新增成員
+            </button>
+            <button onclick="openBatchStarsModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center">
+              <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>一鍵批量發放
+            </button>
+          </div>
+          <div class="text-xs text-slate-500">
+            提示：可點擊特定成員進行發放或扣除星星操作。
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+                  <th class="py-3 px-4">姓名</th>
+                  <th class="py-3 px-4">班別</th>
+                  <th class="py-3 px-4 text-center">累積獲得</th>
+                  <th class="py-3 px-4 text-center">已消耗</th>
+                  <th class="py-3 px-4 text-center">剩餘星星</th>
+                  <th class="py-3 px-4 text-right">操作管理</th>
+                </tr>
+              </thead>
+              <tbody id="admin-students-tbody" class="divide-y divide-slate-100 text-sm font-medium">
+                <!-- JS 動態生成 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後台分頁 3：禮物商店管理 Gifts -->
+      <div id="admin-tab-gifts" class="hidden space-y-4">
+        <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+          <button onclick="openAddGiftModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center">
+            <i class="fa-solid fa-plus mr-2"></i>上架新禮物
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="admin-gift-cards">
+          <!-- JS 動態生成 -->
+        </div>
+      </div>
+
+      <!-- 後台分頁 4：兌換審核 Redemptions -->
+      <div id="admin-tab-redemptions" class="hidden space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+                  <th class="py-3 px-4">申請時間</th>
+                  <th class="py-3 px-4">學生</th>
+                  <th class="py-3 px-4">班別</th>
+                  <th class="py-3 px-4">兌換禮物</th>
+                  <th class="py-3 px-4 text-center">消耗星星</th>
+                  <th class="py-3 px-4 text-center">狀態</th>
+                  <th class="py-3 px-4 text-right">審核操作</th>
+                </tr>
+              </thead>
+              <tbody id="admin-redemptions-tbody" class="divide-y divide-slate-100 text-sm font-medium">
+                <!-- JS 動態生成 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後台分頁 5：班別管理 Classes -->
+      <div id="admin-tab-classes" class="hidden space-y-4">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 max-w-xl space-y-4">
+          <h3 class="font-bold text-slate-800 text-lg">班別 / 分組管理</h3>
+          <div class="flex gap-2">
+            <input type="text" id="new-class-input" placeholder="輸入新班別名稱 (例: 3A班)" class="flex-grow px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+            <button onclick="addClass()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">新增班別</button>
+          </div>
+          <div class="border-t border-slate-200 pt-4">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">目前班別列表</label>
+            <div id="class-list-tags" class="flex flex-wrap gap-2">
+              <!-- JS 動態生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後台分頁 6：系統與文字設定 Settings -->
+      <div id="admin-tab-settings" class="hidden space-y-6">
+        <!-- 更改後台密碼 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 max-w-xl space-y-4">
+          <h3 class="font-bold text-slate-800 text-lg flex items-center"><i class="fa-solid fa-key text-amber-500 mr-2"></i>修改後台登入密碼</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">新密碼</label>
+              <input type="password" id="new-admin-password" placeholder="請輸入新密碼" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+            </div>
+            <button onclick="changeAdminPassword()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold transition">更換密碼</button>
+          </div>
+        </div>
+
+        <!-- 網頁標題與自訂文字 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 max-w-xl space-y-4">
+          <h3 class="font-bold text-slate-800 text-lg flex items-center"><i class="fa-solid fa-pen-to-square text-indigo-500 mr-2"></i>自訂全站標題與文字</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">主標題</label>
+              <input type="text" id="setting-title" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">副標題</label>
+              <input type="text" id="setting-subtitle" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">獎勵單位 (符號/文字，如 ★, 🪙, Pts)</label>
+              <input type="text" id="setting-unit" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+            </div>
+            <button onclick="saveSiteCustomization()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">儲存文字設定</button>
+          </div>
+        </div>
+
+        <!-- 數據備份與匯入 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 max-w-xl space-y-4">
+          <h3 class="font-bold text-slate-800 text-lg flex items-center"><i class="fa-solid fa-database text-emerald-500 mr-2"></i>數據備份與重置</h3>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="exportDataJSON()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">匯出 JSON 備份</button>
+            <button onclick="document.getElementById('import-file-input').click()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold transition">匯入 JSON 備份</button>
+            <input type="file" id="import-file-input" onchange="importDataJSON(event)" class="hidden" accept=".json">
+            <button onclick="resetSystemData()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition">重置全站系統</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 彈出視窗：後台密碼登入 Modal -->
+  <div id="admin-login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4 relative">
+      <div class="text-center">
+        <div class="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800">請輸入後台管理密碼</h3>
+        <p class="text-xs text-slate-500 mt-1">進入管理模式以進行發放星星與權限修改</p>
+      </div>
+      <div>
+        <input type="password" id="admin-login-password-input" onkeydown="if(event.key==='Enter') submitAdminLogin()" placeholder="預設密碼" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-center text-lg tracking-widest focus:outline-none focus:border-amber-500">
+        <p id="login-error-text" class="text-xs text-red-500 mt-1.5 text-center hidden font-bold"></p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeAdminModal()" class="w-1/2 py-2.5 border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50">取消</button>
+        <button onclick="submitAdminLogin()" class="w-1/2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md">驗證進入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈出視窗：發放/扣除星星 Modal -->
+  <div id="star-action-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+      <h3 class="text-lg font-bold text-slate-800" id="star-action-title">調整星星數量</h3>
+      <input type="hidden" id="action-student-id">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">操作類型</label>
+        <select id="action-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+          <option value="add">➕ 發放獎勵星星</option>
+          <option value="deduct">➖ 扣除/兌換星星</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">星星數量</label>
+        <input type="number" id="action-amount" value="5" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">原因/備註</label>
+        <input type="text" id="action-reason" placeholder="例如：課堂表現優異" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeStarActionModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-bold">取消</button>
+        <button onclick="submitStarAction()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold">確認執行</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈出視窗：新增/編輯學生 Modal -->
+  <div id="student-form-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+      <h3 class="text-lg font-bold text-slate-800" id="student-modal-title">新增成員</h3>
+      <input type="hidden" id="edit-student-id">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">成員姓名</label>
+        <input type="text" id="student-name-input" placeholder="例如：張小明" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">所屬班別</label>
+        <select id="student-class-select" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none"></select>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeStudentModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-bold">取消</button>
+        <button onclick="saveStudent()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript 核心邏輯 -->
+  <script>
+    //預設資料結構與初始化
+    const DEFAULT_CLASSES = ["1A", "1B", "2A", "籃球隊"];
+    
+    const DEFAULT_STUDENTS = [
+      { id: 's1', name: '陳小明', class: '1A', earned: 25, used: 10, notes: '已換領文具組' },
+      { id: 's2', name: '張美麗', class: '1A', earned: 40, used: 30, notes: '已換領毛公仔' },
+      { id: 's3', name: '李大華', class: '1B', earned: 15, used: 0, notes: '' },
+      { id: 's4', name: '黃子健', class: '2A', earned: 50, used: 45, notes: '已換領圖書' },
+      { id: 's5', name: '林巧兒', class: '籃球隊', earned: 30, used: 15, notes: '' }
+    ];
+
+    const DEFAULT_GIFTS = [
+      { id: 'g1', name: '精美文具套裝', stars: 10, stock: 15, classLimit: 'ALL', icon: '✏️', desc: '包含鉛筆、橡皮擦與尺規組合' },
+      { id: 'g2', name: '可愛毛公仔', stars: 30, stock: 5, classLimit: 'ALL', icon: '🧸', desc: '高質感限量版毛公仔' },
+      { id: 'g3', name: '課外課本/圖書', stars: 45, stock: 8, classLimit: 'ALL', icon: '📚', desc: '精選啟蒙益智圖書任選一本' }
+    ];
+
+    // 全局 State 狀態
+    let appState = {
+      classes: JSON.parse(localStorage.getItem('star_classes')) || DEFAULT_CLASSES,
+      students: JSON.parse(localStorage.getItem('star_students')) || DEFAULT_STUDENTS,
+      gifts: JSON.parse(localStorage.getItem('star_gifts')) || DEFAULT_GIFTS,
+      redemptions: JSON.parse(localStorage.getItem('star_redemptions')) || [],
+      customText: JSON.parse(localStorage.getItem('star_custom_text')) || {
+        title: "星星獎勵計劃",
+        subtitle: "好表現・積累星光・換領好禮",
+        unit: "★"
+      },
+      currentClassFilter: 'ALL',
+      isAdminLoggedIn: false // 注意：預設未驗證，每次切換至後台都必須重新輸入密碼
+    };
+
+    let idleTimer = null; // 5 分鐘閒置自動鎖定計時器
+
+    // 初始化 App
+    window.onload = function() {
+      // 讀取 URL 網址參數 (例: ?class=1A)
+      const urlParams = new URLSearchParams(window.location.search);
+      const classParam = urlParams.get('class');
+      if (classParam && appState.classes.includes(classParam)) {
+        appState.currentClassFilter = classParam;
+      }
+
+      renderClassOptions();
+      applyCustomText();
+      renderLeaderboard();
+      renderShop();
+    };
+
+    // 儲存資料至 LocalStorage
+    function saveData() {
+      localStorage.setItem('star_classes', JSON.stringify(appState.classes));
+      localStorage.setItem('star_students', JSON.stringify(appState.students));
+      localStorage.setItem('star_gifts', JSON.stringify(appState.gifts));
+      localStorage.setItem('star_redemptions', JSON.stringify(appState.redemptions));
+      localStorage.setItem('star_custom_text', JSON.stringify(appState.customText));
+    }
+
+    // 渲染班別選單
+    function renderClassOptions() {
+      const select = document.getElementById('global-class-select');
+      select.innerHTML = '<option value="ALL">🏫 全部班別 / 全校</option>';
+      appState.classes.forEach(c => {
+        select.innerHTML += `<option value="${c}">${c}</option>`;
+      });
+      select.value = appState.currentClassFilter;
+
+      // 班別管理 Tag 列表
+      const tagContainer = document.getElementById('class-list-tags');
+      if (tagContainer) {
+        tagContainer.innerHTML = appState.classes.map(c => `
+          <span class="bg-slate-100 text-slate-700 font-bold text-xs px-3 py-1.5 rounded-lg border border-slate-200 flex items-center space-x-2">
+            <span>${c}</span>
+            <button onclick="removeClass('${c}')" class="text-slate-400 hover:text-red-500 ml-1">×</button>
+          </span>
+        `).join('');
+      }
+
+      // 彈窗班別下拉
+      const modalSelect = document.getElementById('student-class-select');
+      if (modalSelect) {
+        modalSelect.innerHTML = appState.classes.map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+    }
+
+    // 班別切換事件
+    function handleClassChange(val) {
+      appState.currentClassFilter = val;
+      document.getElementById('current-class-tag').innerText = val === 'ALL' ? '全校展示' : `${val} 專屬排行榜`;
+      renderLeaderboard();
+      renderShop();
+      if (appState.isAdminLoggedIn) renderAdminView();
+    }
+
+    // 應用自訂文字
+    function applyCustomText() {
+      document.getElementById('header-title-text').innerText = appState.customText.title;
+      document.getElementById('header-subtitle-text').innerText = appState.customText.subtitle;
+      document.querySelectorAll('.unit-text').forEach(el => el.innerText = appState.customText.unit);
+      
+      document.getElementById('setting-title').value = appState.customText.title;
+      document.getElementById('setting-subtitle').value = appState.customText.subtitle;
+      document.getElementById('setting-unit').value = appState.customText.unit;
+    }
+
+    // 渲染排行榜 (前台)
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboard-tbody');
+      const searchKeyword = document.getElementById('search-student-input').value.trim().toLowerCase();
+
+      let filtered = appState.students.filter(s => {
+        const matchesClass = appState.currentClassFilter === 'ALL' || s.class === appState.currentClassFilter;
+        const matchesName = s.name.toLowerCase().includes(searchKeyword);
+        return matchesClass && matchesName;
+      });
+
+      // 依照餘下星星進行排序 (Rank)
+      filtered.sort((a, b) => (b.earned - b.used) - (a.earned - a.used));
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">目前尚無符合的成員資料</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((s, idx) => {
+        const remaining = s.earned - s.used;
+        let rankBadge = `<span class="font-bold text-slate-500">${idx + 1}</span>`;
+        if (idx === 0) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-400 text-white font-black text-xs inline-flex items-center justify-center shadow-sm">1</span>`;
+        if (idx === 1) rankBadge = `<span class="w-6 h-6 rounded-full bg-slate-300 text-white font-black text-xs inline-flex items-center justify-center shadow-sm">2</span>`;
+        if (idx === 2) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-700 text-white font-black text-xs inline-flex items-center justify-center shadow-sm">3</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3 px-4 text-center">${rankBadge}</td>
+            <td class="py-3 px-4 font-bold text-slate-800">${s.name}</td>
+            <td class="py-3 px-4 text-center"><span class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded font-bold">${s.class}</span></td>
+            <td class="py-3 px-4 text-center text-amber-600 font-bold">${s.earned}</td>
+            <td class="py-3 px-4 text-center text-slate-400">${s.used}</td>
+            <td class="py-3 px-4 text-center"><span class="bg-amber-50 text-amber-700 font-black px-2.5 py-1 rounded-lg border border-amber-200">${remaining}</span></td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${s.notes || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
+    }
+
+    // 渲染禮物商店 (前台)
+    function renderShop() {
+      const container = document.getElementById('shop-gift-cards');
+      let filtered = appState.gifts.filter(g => g.classLimit === 'ALL' || g.classLimit === appState.currentClassFilter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400">目前尚無上架禮物</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(g => `
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+          <div>
+            <div class="text-4xl mb-3">${g.icon || '🎁'}</div>
+            <h3 class="font-bold text-slate-800 text-lg">${g.name}</h3>
+            <p class="text-xs text-slate-500 mt-1">${g.desc || '無詳細描述'}</p>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-400">所需星星</span>
+              <div class="text-xl font-black text-amber-500">${g.stars} <span class="text-xs">${appState.customText.unit}</span></div>
+            </div>
+            <span class="text-xs font-bold ${g.stock > 0 ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'} px-2.5 py-1 rounded-full">
+              ${g.stock > 0 ? `庫存: ${g.stock}` : '已售罄'}
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 前台分頁切換
+    function switchStudentTab(tab) {
+      document.getElementById('student-tab-leaderboard').classList.toggle('hidden', tab !== 'leaderboard');
+      document.getElementById('student-tab-shop').classList.toggle('hidden', tab !== 'shop');
+      
+      document.getElementById('tab-btn-leaderboard').className = tab === 'leaderboard' 
+        ? "py-3 px-6 font-bold text-amber-600 border-b-2 border-amber-500 flex items-center transition" 
+        : "py-3 px-6 font-bold text-slate-500 hover:text-amber-600 border-b-2 border-transparent flex items-center transition";
+        
+      document.getElementById('tab-btn-shop').className = tab === 'shop' 
+        ? "py-3 px-6 font-bold text-amber-600 border-b-2 border-amber-500 flex items-center transition" 
+        : "py-3 px-6 font-bold text-slate-500 hover:text-amber-600 border-b-2 border-transparent flex items-center transition";
+    }
+
+    // ================= 後台驗證與安全 Session 邏輯 =================
+
+    function openAdminModal() {
+      // 核心需求：若已經登入過，但再次點擊時，一律要求重新輸入密碼驗證
+      document.getElementById('admin-login-password-input').value = '';
+      document.getElementById('login-error-text').classList.add('hidden');
+      document.getElementById('admin-login-modal').classList.remove('hidden');
+      document.getElementById('admin-login-password-input').focus();
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-login-modal').classList.add('hidden');
+    }
+
+    function submitAdminLogin() {
+      const inputPass = document.getElementById('admin-login-password-input').value;
+      const savedPass = localStorage.getItem('star_admin_password') || 't05qh';
+
+      if (inputPass === savedPass) {
+        appState.isAdminLoggedIn = true;
+        closeAdminModal();
+        showAdminPanel();
+        startIdleTimer(); // 啟動 5 分鐘安全鎖定
+      } else {
+        const errEl = document.getElementById('login-error-text');
+        errEl.innerText = '❌ 密碼錯誤，請重新輸入';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    function showAdminPanel() {
+      document.getElementById('student-view').classList.add('hidden');
+      document.getElementById('admin-panel').classList.remove('hidden');
+      document.getElementById('site-header').className = "bg-slate-900 text-white shadow-lg sticky top-0 z-40 transition-colors duration-300";
+      document.getElementById('admin-btn-text').innerText = "進入後台模式中";
+      renderAdminView();
+    }
+
+    // 安全離開後台 (安全登出)
+    function exitAdmin() {
+      appState.isAdminLoggedIn = false; // 徹底銷毀驗證狀態
+      clearTimeout(idleTimer);
+
+      document.getElementById('admin-panel').classList.add('hidden');
+      document.getElementById('student-view').classList.remove('hidden');
+      document.getElementById('site-header').className = "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-lg sticky top-0 z-40 transition-colors duration-300";
+      document.getElementById('admin-btn-text').innerText = "切換至後台";
+      
+      renderLeaderboard();
+    }
+
+    // 5 分鐘無操作自動登出防護
+    function startIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (appState.isAdminLoggedIn) {
+          alert('⚠️ 安全提示：由於您已超過 5 分鐘未操作，系統已自動鎖定並返回前台。');
+          exitAdmin();
+        }
+      }, 5 * 60 * 1000); // 5 分鐘
+    }
+
+    // 監聽用戶操作以重置閒置計時
+    ['mousemove', 'keydown', 'click'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        if (appState.isAdminLoggedIn) startIdleTimer();
+      });
+    });
+
+    // 後台分頁切換與渲染
+    function switchAdminTab(tab) {
+      const tabs = ['overview', 'students', 'gifts', 'redemptions', 'classes', 'settings'];
+      tabs.forEach(t => {
+        document.getElementById(`admin-tab-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`admin-tab-btn-${t}`);
+        if (btn) {
+          btn.className = t === tab 
+            ? "py-2.5 px-5 font-bold text-slate-800 border-b-2 border-slate-800 whitespace-nowrap" 
+            : "py-2.5 px-5 font-bold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap";
+        }
+      });
+
+      if (tab === 'overview') renderCharts();
+    }
+
+    function renderAdminView() {
+      renderAdminStudents();
+      renderAdminGifts();
+      renderAdminRedemptions();
+      renderCharts();
+    }
+
+    // 渲染後台成員管理 Table
+    function renderAdminStudents() {
+      const tbody = document.getElementById('admin-students-tbody');
+      let filtered = appState.students.filter(s => appState.currentClassFilter === 'ALL' || s.class === appState.currentClassFilter);
+
+      tbody.innerHTML = filtered.map(s => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-bold text-slate-800">${s.name}</td>
+          <td class="py-3 px-4"><span class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded font-bold">${s.class}</span></td>
+          <td class="py-3 px-4 text-center font-bold text-amber-600">${s.earned}</td>
+          <td class="py-3 px-4 text-center text-slate-400">${s.used}</td>
+          <td class="py-3 px-4 text-center"><span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">${s.earned - s.used}</span></td>
+          <td class="py-3 px-4 text-right space-x-1">
+            <button onclick="openStarActionModal('${s.id}')" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-2.5 py-1 rounded text-xs font-bold">★ 調整星星</button>
+            <button onclick="deleteStudent('${s.id}')" class="text-slate-400 hover:text-red-500 px-2 py-1 text-xs">刪除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 渲染後台禮物管理
+    function renderAdminGifts() {
+      const container = document.getElementById('admin-gift-cards');
+      container.innerHTML = appState.gifts.map(g => `
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+          <div class="flex justify-between items-start">
+            <div class="text-3xl">${g.icon || '🎁'}</div>
+            <button onclick="deleteGift('${g.id}')" class="text-xs text-red-500 hover:underline">下架刪除</button>
+          </div>
+          <h4 class="font-bold text-slate-800">${g.name}</h4>
+          <div class="text-xs text-slate-500">所需星星：<span class="font-bold text-amber-500">${g.stars}</span> | 庫存：<span class="font-bold text-slate-700">${g.stock}</span></div>
+        </div>
+      `).join('');
+    }
+
+    // 渲染後台審核 Table
+    function renderAdminRedemptions() {
+      const tbody = document.getElementById('admin-redemptions-tbody');
+      tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">尚無待處理的禮物兌換紀錄</td></tr>`;
+    }
+
+    // Chart.js 數據統計
+    function renderCharts() {
+      const totalStudents = appState.students.length;
+      const totalEarned = appState.students.reduce((acc, s) => acc + s.earned, 0);
+      const totalUsed = appState.students.reduce((acc, s) => acc + s.used, 0);
+
+      document.getElementById('stat-total-students').innerText = totalStudents;
+      document.getElementById('stat-total-earned').innerText = totalEarned;
+      document.getElementById('stat-total-used').innerText = totalUsed;
+      document.getElementById('stat-total-remaining').innerText = totalEarned - totalUsed;
+    }
+
+    // ================= CRUD 操作 Modal 與事件 =================
+
+    function openStarActionModal(studentId) {
+      document.getElementById('action-student-id').value = studentId;
+      document.getElementById('star-action-modal').classList.remove('hidden');
+    }
+
+    function closeStarActionModal() {
+      document.getElementById('star-action-modal').classList.add('hidden');
+    }
+
+    function submitStarAction() {
+      const sid = document.getElementById('action-student-id').value;
+      const type = document.getElementById('action-type').value;
+      const amount = parseInt(document.getElementById('action-amount').value) || 0;
+      const reason = document.getElementById('action-reason').value;
+
+      const student = appState.students.find(s => s.id === sid);
+      if (student) {
+        if (type === 'add') {
+          student.earned += amount;
+        } else {
+          student.used += amount;
+        }
+        if (reason) student.notes = reason;
+        saveData();
+        renderAdminStudents();
+        closeStarActionModal();
+      }
+    }
+
+    function openAddStudentModal() {
+      document.getElementById('edit-student-id').value = '';
+      document.getElementById('student-name-input').value = '';
+      document.getElementById('student-form-modal').classList.remove('hidden');
+    }
+
+    function closeStudentModal() {
+      document.getElementById('student-form-modal').classList.add('hidden');
+    }
+
+    function saveStudent() {
+      const name = document.getElementById('student-name-input').value.trim();
+      const cls = document.getElementById('student-class-select').value;
+      if (!name) return alert('請輸入成員姓名');
+
+      appState.students.push({
+        id: 's_' + Date.now(),
+        name: name,
+        class: cls,
+        earned: 0,
+        used: 0,
+        notes: ''
+      });
+
+      saveData();
+      renderAdminStudents();
+      closeStudentModal();
+    }
+
+    function deleteStudent(id) {
+      if (confirm('確定要刪除該成員嗎？')) {
+        appState.students = appState.students.filter(s => s.id !== id);
+        saveData();
+        renderAdminStudents();
+      }
+    }
+
+    function addClass() {
+      const input = document.getElementById('new-class-input');
+      const val = input.value.trim();
+      if (val && !appState.classes.includes(val)) {
+        appState.classes.push(val);
+        input.value = '';
+        saveData();
+        renderClassOptions();
+      }
+    }
+
+    function removeClass(clsName) {
+      if (confirm(`確定要刪除 ${clsName} 班別嗎？`)) {
+        appState.classes = appState.classes.filter(c => c !== clsName);
+        saveData();
+        renderClassOptions();
+      }
+    }
+
+    function changeAdminPassword() {
+      const newPass = document.getElementById('new-admin-password').value.trim();
+      if (!newPass) return alert('請輸入新密碼');
+      localStorage.setItem('star_admin_password', newPass);
+      document.getElementById('new-admin-password').value = '';
+      alert('✅ 後台密碼已成功更新！下次進入後台請使用新密碼。');
+    }
+
+    function saveSiteCustomization() {
+      appState.customText.title = document.getElementById('setting-title').value.trim() || "星星獎勵計劃";
+      appState.customText.subtitle = document.getElementById('setting-subtitle').value.trim() || "";
+      appState.customText.unit = document.getElementById('setting-unit').value.trim() || "★";
+      saveData();
+      applyCustomText();
+      alert('✅ 標題與文字設定已儲存！');
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `star_app_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.students && imported.classes) {
+            appState = imported;
+            saveData();
+            location.reload();
+          } else {
+            alert('❌ 備份檔案格式不正確');
+          }
+        } catch (err) {
+          alert('❌ 無法解析 JSON 檔案');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetSystemData() {
+      if (confirm('⚠️ 警告：這將會清除所有學生與禮物數據，並恢復預設設定。確定繼續？')) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>
